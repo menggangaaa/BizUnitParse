@@ -10,11 +10,16 @@ using System.Windows.Forms;
 
 namespace BizUnitParse
 {
-    public partial class Form1 : Form
+    public partial class MainPanel : Form
     {
-        public Form1()
+        public MainPanel()
         {
             InitializeComponent();
+        }
+
+        private void MainPanel_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
