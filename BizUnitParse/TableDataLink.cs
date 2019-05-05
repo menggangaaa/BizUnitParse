@@ -1,6 +1,6 @@
 ﻿namespace EntityParse
 {
-    class TableDataLink
+    public class TableDataLink
     {
         public TableDataLink upNode;
         public TableDataLink downNode;

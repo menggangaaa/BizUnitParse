@@ -1,6 +1,6 @@
 ﻿namespace EntityParse
 {
-    class FieldInfo
+    public class FieldInfo
     {
         public string name { get; set; }
         public string alias { get; set; }

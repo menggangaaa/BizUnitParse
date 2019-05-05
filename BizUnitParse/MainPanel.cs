@@ -209,7 +209,7 @@ namespace BizUnitParse
                     {
                         continue;
                     }
-                    string rootName = MetaDataUtil.getPackageOrBizunitName(new XmlTextReader(fileName), "package");
+                    string rootName = MetaDataUtil.getBizOrPackAlias(new XmlTextReader(fileName), MetaDataTypeEnum.package);
                     if (rootName == "null")
                     {
                         continue;
@@ -224,7 +224,7 @@ namespace BizUnitParse
                     foreach (FileInfo file in files)
                     {
 
-                        string nodeName = MetaDataUtil.getPackageOrBizunitName(new XmlTextReader(file.FullName), "bizUnit");
+                        string nodeName = MetaDataUtil.getBizOrPackAlias(new XmlTextReader(file.FullName), MetaDataTypeEnum.bizUnit);
                         TreeNode node = new TreeNode();
                         node.Text = nodeName;
                         pnode.Nodes.Add(node);
@@ -310,8 +310,60 @@ namespace BizUnitParse
                     if (falg)
                         break;
                 }
-                //entiryParen(falg);
+                entiryParen(falg);
             }
+        }
+
+        private void entiryParen(bool falg)
+        {
+            if (falg)
+            {
+                //在左边树中可以找到
+                TreeNode node = bizUnitTree.SelectedNode;
+                if (node == null || node.Nodes == null)
+                {
+                    entityTable.Rows.Clear();
+                    txtFilter.Text = "";
+                    return;
+                }
+                if (node.Nodes.Count == 0)
+                {
+                    string path = node.Tag.ToString();
+                    //xmlParse(path);
+                }
+                else
+                {
+                    entityTable.Rows.Clear();
+                    txtFilter.Text = "";
+                }
+            }
+            else
+            {
+                //在左边树中找不到
+                string outString = "";
+                //GetValue("JarFileList", textBox3.Text, out outString, basePath);
+                GetValue("metadata", txtEntityFilter.Text, out outString, entityPath);
+                if (outString.Length > 0)
+                {
+                    string path = txtDirPath.Text + "\\metadata\\" + txtEntityFilter.Text;
+                    //xmlParse(path);
+                }
+                else
+                {
+                    GetValue("metadata", txtEntityFilter.Text, out outString, bizunitPath);
+                    if (outString.Length > 0)
+                    {
+                        string entityName = outString;
+                        GetValue("metadata", entityName, out outString, entityPath);
+                        if (outString.Length > 0)
+                        {
+                            string path = txtDirPath.Text + "\\metadata\\" + entityName;
+                            //xmlParse(path);
+                        }
+                    }
+                }
+            }
+
         }
 
         private void MainPanel_Activated(object sender, EventArgs e)
