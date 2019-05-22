@@ -20,6 +20,8 @@ namespace EntityParse
 
         public void Add(FieldInfo fieldInfo)
         {
+            fieldInfo.entity = this;
+            fieldInfo.rs = rs;
             fields.Add(fieldInfo);
         }
 
