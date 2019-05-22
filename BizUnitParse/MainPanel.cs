@@ -253,7 +253,7 @@ namespace BizUnitParse
                 for (int j = 0; j < bizUnitTree.Nodes[i].Nodes.Count; j++)
                 {
                     if (bizUnitTree.Nodes[i].Nodes[j].Text.IndexOf("医疗销售结算") > -1
-                        && bizUnitTree.Nodes[i].Nodes[j].Text.Length == 7)
+                        && bizUnitTree.Nodes[i].Nodes[j].Text.Length == 6)
                     {
                         bizUnitTree.Nodes[i].Nodes[j].Expand();
                         bizUnitTree.SelectedNode = bizUnitTree.Nodes[i].Nodes[j];

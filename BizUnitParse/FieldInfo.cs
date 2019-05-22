@@ -1,7 +1,10 @@
-﻿namespace EntityParse
+﻿using BizUnitParse;
+
+namespace EntityParse
 {
-    public class FieldInfo
+    public class FieldInfo : ResourceInfo
     {
+        public EntityInfo entity { get; set; }
         public string name { get; set; }
         public string alias { get; set; }
         public string tableName { get; set; }

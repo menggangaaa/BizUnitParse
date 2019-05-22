@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using BizUnitParse;
+using System.Collections.Generic;
 
 namespace EntityParse
 {
-    public class EntityInfo
+    public class EntityInfo : ResourceInfo
     {
         public List<FieldInfo> fields = new List<FieldInfo>();
 
@@ -11,9 +12,11 @@ namespace EntityParse
         public string tableName { get; set; }
         public string bosType { get; set; }
         public string package { get; set; }
+        public string bizUnitPK { get; set; }
         public string fullName { get; set; }
+        public string baseEntity { get; set; }
 
-        public EntityInfo baseEntity { get; set; }
+        //public EntityInfo baseEntity { get; set; }
 
         public void Add(FieldInfo fieldInfo)
         {
