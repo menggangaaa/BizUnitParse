@@ -154,6 +154,15 @@ namespace EntityParse
                     entityInfo.alias = langName;
                 }
             }
+            foreach (FieldInfo fieldInfo in entityInfo.fields)
+            {
+                Dictionary<string, string> langMap = entityInfo.rs[fieldInfo.alias];
+                string langName = getLangName(langMap);
+                if (langName != null)
+                {
+                    fieldInfo.alias = langName;
+                }
+            }
             entityInfo.fullName = entityInfo.package + "." + entityInfo.name;
             entityMap[entityInfo.fullName] = entityInfo;
             return entityInfo;
@@ -228,36 +237,40 @@ namespace EntityParse
             XmlNodeList propertyNodeList = propertiesNode.ChildNodes;
             foreach (XmlNode propertyNode in propertiesNode)
             {
+                XmlNodeList proNodeList = propertyNode.ChildNodes;
                 FieldInfo fieldInfo = new FieldInfo();
-                string proName = propertyNode.Name;
-                if (proName == "name")
+                foreach (XmlNode proNode in proNodeList)
                 {
-                    fieldInfo.name = propertyNode.InnerText;
-                }
-                else if (proName == "alias")
-                {
-                    fieldInfo.alias = propertyNode.InnerText;
-                }
-                else if (proName == "dataType")
-                {
-                    fieldInfo.dataType = propertyNode.InnerText;
-                }
-                else if (proName == "metadataRef")
-                {
-                    fieldInfo.metadataRef = propertyNode.InnerText;
-                }
-                else if (proName == "mappingField")
-                {
-                    fieldInfo.mappingField = propertyNode.FirstChild.Attributes["value"].Value;
-                }
-                else if (proName == "relationship")
-                {
-                    XmlNodeList keyNodeList = propertyNode.ChildNodes;
-                    if (keyNodeList.Count == 2)
+                    string proName = proNode.Name;
+                    if (proName == "name")
                     {
-                        string package = keyNodeList[0].Attributes["value"].Value;
-                        string name = keyNodeList[1].Attributes["value"].Value;
-                        fieldInfo.relationship = package + "." + name;
+                        fieldInfo.name = proNode.InnerText;
+                    }
+                    else if (proName == "alias")
+                    {
+                        fieldInfo.alias = proNode.InnerText;
+                    }
+                    else if (proName == "dataType")
+                    {
+                        fieldInfo.dataType = proNode.InnerText;
+                    }
+                    else if (proName == "metadataRef")
+                    {
+                        fieldInfo.metadataRef = proNode.InnerText;
+                    }
+                    else if (proName == "mappingField")
+                    {
+                        fieldInfo.mappingField = proNode.FirstChild.Attributes["value"].Value;
+                    }
+                    else if (proName == "relationship")
+                    {
+                        XmlNodeList keyNodeList = proNode.ChildNodes;
+                        if (keyNodeList.Count == 2)
+                        {
+                            string package = keyNodeList[0].Attributes["value"].Value;
+                            string name = keyNodeList[1].Attributes["value"].Value;
+                            fieldInfo.relationship = package + "." + name;
+                        }
                     }
                 }
                 entityInfo.Add(fieldInfo);
@@ -292,6 +305,12 @@ namespace EntityParse
             {
                 return langMap["en_US"];
             }
+        }
+        public static string getFullName(string path,string dir)
+        {
+            string fullName = path.Replace(dir,"");
+            fullName = fullName.Replace("\\", ".");
+            return fullName.Substring(0,fullName.LastIndexOf("."));
         }
 
         public static EntityInfo getEntity(string fullName)

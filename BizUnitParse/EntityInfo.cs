@@ -46,7 +46,7 @@ namespace EntityParse
             FieldInfo fieldInfo = new FieldInfo();
             fieldInfo.name = name;
             fieldInfo.alias = "null";
-            fieldInfo.tableName = "null";
+            fieldInfo.mappingField = "null";
             fieldInfo.dataType = "default";
             fields.Add(fieldInfo);
             return fieldInfo;

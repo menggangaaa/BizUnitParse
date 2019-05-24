@@ -177,12 +177,12 @@ namespace BizUnitParse
 
         private void entityTable_DoubleClick(object sender, EventArgs e)
         {
-
+            
         }
 
         private void bizUnitTree_DoubleClick(object sender, EventArgs e)
         {
-
+            entiryParen(true);
         }
 
         //初始化列表树
@@ -330,6 +330,15 @@ namespace BizUnitParse
                 {
                     string path = node.Tag.ToString();
                     //xmlParse(path);
+                    XmlTextReader reader = new XmlTextReader(path);
+                    MetaDataUtil.metadataParse(reader);
+                    string fullName = MetaDataUtil.getFullName(path, txtDirPath.Text + "\\metadata\\");
+                    if (MetaDataUtil.entityMap.ContainsKey(fullName) && MetaDataUtil.entityMap[fullName] != null)
+                    {
+                        EntityInfo entityInfo = MetaDataUtil.entityMap[fullName];
+                        entityTable.Rows.Clear();
+                        fillTableEntity(entityInfo);
+                    }
                 }
                 else
                 {
@@ -370,5 +379,55 @@ namespace BizUnitParse
         {
             txtEntityFilter.Focus();
         }
+
+        #region 使用EntityInfo填充表格 fillTableEntity(info)
+        private void fillTableEntity(EntityInfo info)
+        {
+            if (info == null)
+            {
+                return;
+            }
+            foreach (DataGridViewColumn column in entityTable.Columns)
+            {
+                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            }
+            //textBox4.Text = ((ArrayList)list[0])[2].ToString();
+
+            //表字段
+            int index = entityTable.Rows.Add();
+            entityTable.Rows[index].Cells[0].Value = info.name;
+            entityTable.Rows[index].Cells[1].Value = info.alias;
+            entityTable.Rows[index].Cells[2].Value = info.tableName;
+            entityTable.Rows[index].Cells[3].Value = info.bosType;
+            entityTable.Rows.Add();
+            foreach (FieldInfo fieldInfo in info.fields)
+            {
+                index = entityTable.Rows.Add();
+                entityTable.Rows[index].Cells[0].Value = fieldInfo.name;
+                entityTable.Rows[index].Cells[1].Value = fieldInfo.alias;
+                entityTable.Rows[index].Cells[2].Value = fieldInfo.mappingField;
+                entityTable.Rows[index].Cells[3].Value = null;
+                entityTable.Rows[index].Cells[4].Value = fieldInfo.dataType;
+                if (fieldInfo.relationship != null)
+                {
+                    entityTable.Rows[index].Cells[5].Value = fieldInfo.relationship;
+                }
+                else if(fieldInfo.metadataRef != null)
+                {
+                    entityTable.Rows[index].Cells[5].Value = fieldInfo.metadataRef;
+                }
+            }
+            foreach (DataGridViewColumn column in entityTable.Columns)
+            {
+                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            }
+            if (info.baseEntity != null)
+            {
+                //递归添加
+                entityTable.Rows.Add();
+                //fillTableEntity(info.baseEntity);
+            }
+        }
+        #endregion
     }
 }
