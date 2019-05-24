@@ -9,6 +9,7 @@ namespace EntityParse
         public static Dictionary<string, EntityInfo> entityMap = new Dictionary<string, EntityInfo>();
         public static Dictionary<string, RelationInfo> relationMap = new Dictionary<string, RelationInfo>();
         public static Dictionary<string, EnumInfo> enumMap = new Dictionary<string, EnumInfo>();
+        public static string baseDir { get; set; }
 
         //获取包名或者业务单元名称
         public static string getBizOrPackAlias(XmlTextReader reader, MetaDataTypeEnum metaDatetype)
@@ -151,15 +152,7 @@ namespace EntityParse
                     resourceParse(childNode,entityInfo.rs);
                 }
             }
-            if (entityInfo.rs[entityInfo.alias] != null)
-            {
-                Dictionary<string, string> langMap = entityInfo.rs[entityInfo.alias];
-                string langName = getLangName(langMap);
-                if (langName != null)
-                {
-                    entityInfo.alias = langName;
-                }
-            }
+            setMetaDataAlias(entityInfo);
             foreach (FieldInfo fieldInfo in entityInfo.fields)
             {
                 Dictionary<string, string> langMap = entityInfo.rs[fieldInfo.alias];
@@ -223,15 +216,7 @@ namespace EntityParse
                     resourceParse(childNode, relationInfo.rs);
                 }
             }
-            if (relationInfo.rs[relationInfo.alias] != null)
-            {
-                Dictionary<string, string> langMap = relationInfo.rs[relationInfo.alias];
-                string langName = getLangName(langMap);
-                if (langName != null)
-                {
-                    relationInfo.alias = langName;
-                }
-            }
+            setMetaDataAlias(relationInfo);
 
             relationMap[relationInfo.fullName] = relationInfo;
             return relationInfo;
@@ -301,16 +286,16 @@ namespace EntityParse
                     resourceParse(childNode, enumInfo.rs);
                 }
             }
-            if (enumInfo.rs[enumInfo.alias] != null)
+            setMetaDataAlias(enumInfo);
+            foreach (EnumValueInfo enumValueInfo in enumInfo.enumValues)
             {
-                Dictionary<string, string> langMap = enumInfo.rs[enumInfo.alias];
+                Dictionary<string, string> langMap = enumInfo.rs[enumValueInfo.alias];
                 string langName = getLangName(langMap);
                 if (langName != null)
                 {
-                    enumInfo.alias = langName;
+                    enumValueInfo.alias = langName;
                 }
             }
-
             enumMap[enumInfo.fullName] = enumInfo;
             return enumInfo;
         }
@@ -390,11 +375,51 @@ namespace EntityParse
                 return langMap["en_US"];
             }
         }
-        public static string getFullName(string path,string dir)
+        public static string getFullName(string path)
         {
-            string fullName = path.Replace(dir,"");
+            string fullName = path.Replace(baseDir,"");
             fullName = fullName.Replace("\\", ".");
             return fullName.Substring(0,fullName.LastIndexOf("."));
+        }
+
+        public static string getPath(string fullName,MetaDataTypeEnum metaDataType)
+        {
+            string path = fullName.Replace(".", "\\");
+            path = baseDir + path;
+            switch (metaDataType)
+            {
+                case MetaDataTypeEnum.bizUnit:
+                    path = path + ".bizunit";
+                    break;
+                case MetaDataTypeEnum.package:
+                    path = path + ".package";
+                    break;
+                case MetaDataTypeEnum.entity:
+                    path = path + ".entity";
+                    break;
+                case MetaDataTypeEnum.relation:
+                    path = path + ".relation";
+                    break;
+                case MetaDataTypeEnum.table:
+                    path = path + ".table";
+                    break;
+                case MetaDataTypeEnum.enums:
+                    path = path + ".enum";
+                    break;
+                case MetaDataTypeEnum.ui:
+                    path = path + ".ui";
+                    break;
+                case MetaDataTypeEnum.query:
+                    path = path + ".query";
+                    break;
+                case MetaDataTypeEnum.none:
+                    path = null;
+                    break;
+                default:
+                    path = null;
+                    break;
+            }
+            return path;
         }
 
         public static EntityInfo getEntity(string fullName)
@@ -405,6 +430,19 @@ namespace EntityParse
         public static RelationInfo getRelation(string fullName)
         {
             return relationMap[fullName];
+        }
+
+        public static void setMetaDataAlias(MetaDataInfo metaData)
+        {
+            if (metaData.rs[metaData.alias] != null)
+            {
+                Dictionary<string, string> langMap = metaData.rs[metaData.alias];
+                string langName = getLangName(langMap);
+                if (langName != null)
+                {
+                    metaData.alias = langName;
+                }
+            }
         }
 
         public static MetaDataTypeEnum xmlPathIsMetaDateType(string path)

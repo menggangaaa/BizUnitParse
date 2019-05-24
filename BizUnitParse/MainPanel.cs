@@ -48,6 +48,10 @@ namespace BizUnitParse
             if (!File.Exists(path))
                 File.Create(path);
         }
+        public void initBaseDir()
+        {
+            MetaDataUtil.baseDir = txtDirPath.Text + "\\metadata\\";
+        }
 
         public MainPanel()
         {
@@ -116,6 +120,7 @@ namespace BizUnitParse
             {
                 MessageBox.Show(ee.Message);
             }
+            initBaseDir();
             string path = txtDirPath.Text + "\\metadata\\com\\kingdee\\eas\\hse\\scm";
             if (Directory.Exists(path) && isIDE.Checked)
             {
@@ -332,7 +337,7 @@ namespace BizUnitParse
                     //xmlParse(path);
                     XmlTextReader reader = new XmlTextReader(path);
                     MetaDataUtil.metadataParse(reader);
-                    string fullName = MetaDataUtil.getFullName(path, txtDirPath.Text + "\\metadata\\");
+                    string fullName = MetaDataUtil.getFullName(path);
                     if (MetaDataUtil.entityMap.ContainsKey(fullName) && MetaDataUtil.entityMap[fullName] != null)
                     {
                         EntityInfo entityInfo = MetaDataUtil.entityMap[fullName];
@@ -425,7 +430,32 @@ namespace BizUnitParse
             {
                 //递归添加
                 entityTable.Rows.Add();
-                //fillTableEntity(info.baseEntity);
+                if (MetaDataUtil.entityMap.ContainsKey(info.baseEntity))
+                {
+                    //已存在 对象
+                    EntityInfo baseEntity = MetaDataUtil.entityMap[info.baseEntity];
+                    fillTableEntity(baseEntity);
+                }
+                else if(info.baseEntity != null)
+                {
+                    //未初始化对象
+                    string path = MetaDataUtil.getPath(info.baseEntity, MetaDataTypeEnum.entity);
+                    if (File.Exists(path))
+                    {
+                        //文件存在
+                        MetaDataUtil.metadataParse(new XmlTextReader(path));
+                        EntityInfo baseEntity = MetaDataUtil.getEntity(info.baseEntity);
+                        if (baseEntity != null)
+                        {
+                            fillTableEntity(baseEntity);
+                        }
+                    }
+                    else
+                    {
+                        //文件不存在
+                    }
+                }
+                //
             }
         }
         #endregion
