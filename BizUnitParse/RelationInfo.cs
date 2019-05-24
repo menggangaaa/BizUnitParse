@@ -2,12 +2,8 @@
 
 namespace BizUnitParse
 {
-    public class RelationInfo : ResourceInfo
+    public class RelationInfo : MetaDataInfo
     {
-        public string name { get; set; }
-        public string alias { get; set; }
-        public string package { get; set; }
-        public string fullName { get; set; }
         public string supplierObject { get; set; }
         public string clientObject { get; set; }
     }

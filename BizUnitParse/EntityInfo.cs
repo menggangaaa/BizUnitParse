@@ -3,17 +3,13 @@ using System.Collections.Generic;
 
 namespace EntityParse
 {
-    public class EntityInfo : ResourceInfo
+    public class EntityInfo : MetaDataInfo
     {
         public List<FieldInfo> fields = new List<FieldInfo>();
 
-        public string name { get; set; }
-        public string alias { get; set; }
         public string tableName { get; set; }
         public string bosType { get; set; }
-        public string package { get; set; }
         public string bizUnitPK { get; set; }
-        public string fullName { get; set; }
         public string baseEntity { get; set; }
 
         //public EntityInfo baseEntity { get; set; }

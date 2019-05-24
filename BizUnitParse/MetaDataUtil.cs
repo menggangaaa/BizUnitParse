@@ -1,7 +1,6 @@
 ﻿using BizUnitParse;
 using System.Collections.Generic;
 using System.Xml;
-using System;
 
 namespace EntityParse
 {
@@ -9,6 +8,7 @@ namespace EntityParse
     {
         public static Dictionary<string, EntityInfo> entityMap = new Dictionary<string, EntityInfo>();
         public static Dictionary<string, RelationInfo> relationMap = new Dictionary<string, RelationInfo>();
+        public static Dictionary<string, EnumInfo> enumMap = new Dictionary<string, EnumInfo>();
 
         //获取包名或者业务单元名称
         public static string getBizOrPackAlias(XmlTextReader reader, MetaDataTypeEnum metaDatetype)
@@ -72,6 +72,7 @@ namespace EntityParse
             XmlNamespaceManager nsMgr = new XmlNamespaceManager(xml.NameTable);
             nsMgr.AddNamespace("ns", "com.kingdee.bos.metadata");
             XmlNode root = xml.LastChild;
+            //MD5 md5 = new MD5CryptoServiceProvider();
             if (root.Name == "entityObject")
             {
                 //实体 解析
@@ -81,6 +82,11 @@ namespace EntityParse
             {
                 //关系 解析
                 relationParse(root);
+            }
+            else if (root.Name == "bizEnum")
+            {
+                //枚举 解析
+                enumParse(root);
             }
 
         }
@@ -229,6 +235,84 @@ namespace EntityParse
 
             relationMap[relationInfo.fullName] = relationInfo;
             return relationInfo;
+        }
+
+        //枚举解析
+        public static EnumInfo enumParse(XmlNode root)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+            EnumInfo enumInfo = new EnumInfo();
+            XmlNodeList nodeList = root.ChildNodes;
+            foreach (XmlNode childNode in nodeList)
+            {
+                string childNodeName = childNode.Name;
+                if (childNodeName == "package")
+                {
+                    enumInfo.package = childNode.InnerText;
+                }
+                else if (childNodeName == "name")
+                {
+                    enumInfo.name = childNode.InnerText;
+                }
+                else if (childNodeName == "alias")
+                {
+                    enumInfo.alias = childNode.InnerText;
+                }
+                else if (childNodeName == "enumDataType")
+                {
+                    enumInfo.enumDataType = childNode.InnerText;
+                }
+                else if (childNodeName == "enumValues")
+                {
+                    XmlNodeList enumValueNodeList = childNode.ChildNodes;
+                    foreach (XmlNode enumValueNode in enumValueNodeList)
+                    {
+                        EnumValueInfo enumValueInfo = new EnumValueInfo();
+                        XmlNodeList proNodeList = enumValueNode.ChildNodes;
+                        foreach (XmlNode proNode in proNodeList)
+                        {
+                            string proName = proNode.Name;
+                            if (childNodeName == "name")
+                            {
+                                enumValueInfo.name = proNode.InnerText;
+                            }
+                            else if (childNodeName == "alias")
+                            {
+                                enumValueInfo.alias = proNode.InnerText;
+                            }
+                            else if (childNodeName == "userDefined")
+                            {
+                                enumValueInfo.userDefined = proNode.InnerText;
+                            }
+                            else if (childNodeName == "value")
+                            {
+                                enumValueInfo.value = proNode.InnerText;
+                            }
+                        }
+                        enumValueInfo.rs = enumInfo.rs;
+                        enumInfo.Add(enumValueInfo);
+                    }
+                }
+                else if (childNodeName == "resource")
+                {
+                    resourceParse(childNode, enumInfo.rs);
+                }
+            }
+            if (enumInfo.rs[enumInfo.alias] != null)
+            {
+                Dictionary<string, string> langMap = enumInfo.rs[enumInfo.alias];
+                string langName = getLangName(langMap);
+                if (langName != null)
+                {
+                    enumInfo.alias = langName;
+                }
+            }
+
+            enumMap[enumInfo.fullName] = enumInfo;
+            return enumInfo;
         }
 
 

@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EntityInfo.cs" />
+    <Compile Include="EnumInfo.cs" />
+    <Compile Include="EnumValueInfo.cs" />
     <Compile Include="FieldInfo.cs" />
     <Compile Include="MainPanel.cs">
       <SubType>Form</SubType>
@@ -56,6 +58,7 @@
     <Compile Include="MainPanel.Designer.cs">
       <DependentUpon>MainPanel.cs</DependentUpon>
     </Compile>
+    <Compile Include="MetaDataInfo.cs" />
     <Compile Include="MetaDataTypeEnum.cs" />
     <Compile Include="MetaDataUtil.cs" />
     <Compile Include="Program.cs" />
