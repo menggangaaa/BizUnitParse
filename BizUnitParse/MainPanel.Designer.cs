@@ -201,6 +201,7 @@
             this.entityTable.Size = new System.Drawing.Size(920, 717);
             this.entityTable.TabIndex = 13;
             this.entityTable.DoubleClick += new System.EventHandler(this.entityTable_DoubleClick);
+            this.entityTable.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.entityTable_KeyPress);
             // 
             // column
             // 
@@ -273,7 +274,7 @@
             this.Controls.Add(this.txtDirPath);
             this.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
+            this.Margin = new System.Windows.Forms.Padding(5);
             this.Name = "MainPanel";
             this.Text = "业务单元解析";
             this.Activated += new System.EventHandler(this.MainPanel_Activated);

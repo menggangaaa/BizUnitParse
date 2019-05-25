@@ -1,9 +1,12 @@
 ﻿using EntityParse;
+using ICSharpCode.SharpZipLib.Zip;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
 
@@ -128,11 +131,55 @@ namespace BizUnitParse
                 initTree();
             }
 
+            List<string> jarMetas = ReadSingleSection("metadata", entityPath);
+            foreach (string jarMetaName in jarMetas)
+            {
+                txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
+            }
+            jarMetas = ReadSingleSection("metadata", bizunitPath);
+            foreach (string jarMetaName in jarMetas)
+            {
+                txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
+            }
 
             //设置文本框下拉显示
             txtEntityFilter.AutoCompleteMode = AutoCompleteMode.Suggest;
             txtEntityFilter.AutoCompleteSource = AutoCompleteSource.CustomSource;
             txtEntityFilter.Focus();
+
+            initSqlPanel();
+        }
+
+        public TextBox txtSql = null;
+        public ToolStripDropDown dropDown = null;
+        private void initSqlPanel()
+        {
+            txtSql = new TextBox();
+            txtSql.Multiline = true;
+            txtSql.WordWrap = false;
+            txtSql.ScrollBars = ScrollBars.Both;
+            txtSql.Font = new Font("微软雅黑", 12f);
+            txtSql.Text = "select * from table";
+            txtSql.BorderStyle = BorderStyle.None;
+            txtSql.Margin = new Padding(0);
+            ToolStripControlHost treeViewHost = new ToolStripControlHost(txtSql);
+            treeViewHost.Margin = new Padding(0);
+            treeViewHost.AutoSize = false;
+            treeViewHost.Size = new Size(385, 445);
+            dropDown = new ToolStripDropDown();
+            dropDown.Margin = new Padding(0);
+            dropDown.Items.Add(treeViewHost);
+            //dropDown.Show(this, 880, 300);
+
+            txtSql.KeyDown += TxtSql_KeyDown;
+        }
+
+        private void TxtSql_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                ((TextBox)sender).SelectAll();
+            }
         }
 
         private void txtDirPath_TextChanged(object sender, EventArgs e)
@@ -157,12 +204,57 @@ namespace BizUnitParse
 
         private void btnInitJar_Click(object sender, EventArgs e)
         {
-
+            initJarBar.Visible = true;
+            initJarBar.Value = 0;
+            labInitJar.Visible = false;
+            Thread thread1 = new Thread(new ParameterizedThreadStart(initJarMeta));
+            thread1.Start();
         }
 
+        //字段过滤
         private void txtFilter_TextChanged(object sender, EventArgs e)
         {
+            //筛选
+            foreach (DataGridViewColumn column in entityTable.Columns)
+            {
+                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+            }
+            for (int i = 2; i < entityTable.Rows.Count - 1; i++)
+            {
 
+                DataGridViewRow row = entityTable.Rows[i];
+                DataGridViewBand band = entityTable.Rows[i];
+                if (txtFilter.Text.Length > 0)
+                {
+                    string name = empToValue(row.Cells[0].Value).ToUpper();
+                    string alias = empToValue(row.Cells[1].Value).ToUpper();
+                    string selectText = txtFilter.Text.ToUpper();
+                    if (name.IndexOf(selectText) > -1 || alias.IndexOf(selectText) > -1)
+                    {
+                        //row.DefaultCellStyle.BackColor = Color.Yellow;
+                        band.Visible = true;
+                    }
+                    else
+                    {
+                        //row.DefaultCellStyle.BackColor = Color.White;
+                        band.Visible = false;
+                    }
+                }
+                else
+                {
+                    //row.DefaultCellStyle.BackColor = Color.White;
+                    band.Visible = true;
+                }
+            }
+            foreach (DataGridViewColumn column in entityTable.Columns)
+            {
+                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+            }
+        }
+
+        public string empToValue(object o)
+        {
+            return o == null ? "" : o.ToString();
         }
 
         private void btnLeft_Click(object sender, EventArgs e)
@@ -266,7 +358,6 @@ namespace BizUnitParse
                         return;
                     }
                 }
-
             }
         }
 
@@ -453,11 +544,317 @@ namespace BizUnitParse
                     else
                     {
                         //文件不存在
+                        string metaPath = null;
+                        GetValue("metadata", info.baseEntity, out metaPath, entityPath);
+                        if (metaPath != null && metaPath.Length > 0)
+                        {
+                            initJarFile(metaPath);
+                        }
+                        if (MetaDataUtil.entityMap.ContainsKey(info.baseEntity))
+                        {
+                            //已存在 对象
+                            EntityInfo baseEntity = MetaDataUtil.entityMap[info.baseEntity];
+                            fillTableEntity(baseEntity);
+                        }
                     }
                 }
                 //
             }
         }
         #endregion
+
+        public void initJarFile(string jarPath)
+        {
+            string path = null;
+            if (jarPath.IndexOf(txtDirPath.Text) < 0)
+            {
+                if (isIDE.Checked)
+                {
+                    path = txtDirPath.Text + "\\basemetas\\" + jarPath;
+                }
+                else if (isClient.Checked)
+                {
+                    path = txtDirPath.Text + "\\metas\\" + jarPath;
+                }
+            }
+            else
+            {
+                path = jarPath;
+            }
+            if (!File.Exists(path))
+            {
+                return;
+            }
+            ZipInputStream zipStream = new ZipInputStream(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read));
+            ZipEntry entry = zipStream.GetNextEntry();
+            Dictionary<string, byte[]> dict = new Dictionary<string, byte[]>();
+            while (entry != null)
+            {
+                if (!entry.IsDirectory)
+                {
+                    string entryName = entry.Name;
+                    if (entryName.IndexOf(".entity") > -1
+                        || entryName.IndexOf(".enum") > -1
+                        || entryName.IndexOf(".relation") > -1
+                        || entryName.IndexOf(".package") > -1
+                        || entryName.IndexOf(".bizunit") > -1
+                        //|| entryName.IndexOf(".table") > -1
+                        )
+                    {
+                        //string mateName = entryName.Substring(entryName.LastIndexOf('/') + 1, entryName.Length - entryName.LastIndexOf('/') - 1);
+                        string mateName = MetaDataUtil.getFullName(entryName);
+                        string matePath = "";
+                        if (isIDE.Checked)
+                        {
+                            matePath = path.Replace(txtDirPath.Text + "\\basemetas\\", "");
+                        }
+                        else if(isClient.Checked)
+                        {
+                            matePath = path.Replace(txtDirPath.Text + "\\metas\\", "");
+                        }
+                        //WritePrivateProfileString("JarFileList", mateName, matePath, basePath);
+                        //wirteLog(DateTime.Now.ToString("yyyyMMdd-HHmm") + ":" + matePath + "\t" + entryName + "\n");
+                        writeMetaDataToConfig(zipStream, entry, mateName, matePath);
+                    }
+                }
+                //获取下一个文件
+                entry = zipStream.GetNextEntry();
+            }
+            zipStream.Close();
+        }
+
+        //将元数据写入 配置文件
+        public void writeMetaDataToConfig(ZipInputStream zipStream, ZipEntry entry, string mateName, string metaPath)
+        {
+            string entryName = entry.Name;
+            byte[] data = new byte[zipStream.Length];
+            zipStream.Read(data, 0, data.Length);
+            MemoryStream memory = new MemoryStream(data);
+            BufferedStream stream = new BufferedStream(memory);
+            XmlTextReader reader = new XmlTextReader(stream);
+            MetaDataUtil.metadataParse(reader);
+            if (entryName.IndexOf(".entity") > -1)
+            {
+                WritePrivateProfileString("metadata", mateName, metaPath, entityPath);
+                WritePrivateProfileString("metadata", mateName, entryName, entityToPackagePath);
+            }
+            else if (entryName.IndexOf(".relation") > -1)
+            {
+                WritePrivateProfileString("metadata", mateName, metaPath, relationPath);
+            }
+            else if (entryName.IndexOf(".enum") > -1)
+            {
+                WritePrivateProfileString("metadata", mateName, metaPath, enumPath);
+            }
+            else if (entryName.IndexOf(".bizunit") > -1)
+            {
+                string name = MetaDataUtil.getBizOrPackAlias(reader, MetaDataTypeEnum.bizUnit);
+                WritePrivateProfileString("metadata", name, mateName.Replace(".bizunit", ".entity"), bizunitPath);
+            }
+            else if (entryName.IndexOf(".package") > -1)
+            {
+               
+                string name = MetaDataUtil.getBizOrPackAlias(reader, MetaDataTypeEnum.package);
+                WritePrivateProfileString("metadata", name, entryName.Substring(0, entryName.LastIndexOf(".")), packagePath);
+            }
+            reader.Close();
+            stream.Close();
+            memory.Close();
+        }
+
+        public void initJarMeta(object str)
+        {
+            WritePrivateProfileString("Information", "isInitJar", "0", basePath);
+            //string[] sources = { "\\basemetas\\bos", "\\basemetas\\eas" };
+            List<string> sourceList = new List<string>();
+            if (isIDE.Checked)
+            {
+                sourceList.Add("\\basemetas\\bos");
+                sourceList.Add("\\basemetas\\eas");
+            }
+            else if (isClient.Checked)
+            {
+                sourceList.Add("\\metas\\bos");
+                sourceList.Add("\\metas\\eas");
+                sourceList.Add("\\metas\\sp");
+            }
+
+            int one = 0;
+            int two = 0;
+            int ban = 100 / sourceList.Count;
+            foreach (string source in sourceList)
+            {
+                string filePath = txtDirPath.Text + source;
+                //wirteLog(DateTime.Now.ToString("yyyyMMdd-HHmm") + ":" + filePath + "\n");
+                DirectoryInfo di = new DirectoryInfo(filePath);
+                if (!di.Exists)
+                {
+                    MessageBox.Show("文件夹路径不正确!!!");
+                    return;
+                }
+                FileInfo[] files = di.GetFiles();
+                foreach (FileInfo file in files)
+                {
+                    //wirteLog(DateTime.Now.ToString("yyyyMMdd-HHmm") + ":" + file.FullName + "\n");
+                    if (file.FullName.IndexOf("\\metas\\sp") > -1 && file.FullName.IndexOf("\\metas\\sp\\sp_scm-metas.jar") < 0)
+                    {
+                        continue;
+                    }
+                    if (!file.FullName.EndsWith(".jar"))
+                    {
+                        continue;
+                    }
+                    initJarFile(file.FullName);
+                    if (initJarBar.InvokeRequired)
+                    {
+                        // 当一个控件的InvokeRequired属性值为真时，说明有一个创建它以外的线程想访问它
+                        Action<string> actionDelegate = (x) => { initJarBar.Value = (int)(ban * one + ((double)two) / files.Length * ban); };
+                        // Action<string> actionDelegate = delegate(string txt) { this.label2.Text = txt; };
+                        initJarBar.Invoke(actionDelegate, str);
+                    }
+                    two++;
+                }
+                two = 0;
+                one++;
+            }
+            if (initJarBar.InvokeRequired)
+            {
+                // 当一个控件的InvokeRequired属性值为真时，说明有一个创建它以外的线程想访问它
+                Action<string> actionDelegate = (x) => { initJarBar.Value = 100; };
+                this.labInitJar.Invoke(actionDelegate, str);
+            }
+            WritePrivateProfileString("Information", "isInitJar", "1", basePath);
+            Action<string> actionDelegate2 = (x) =>
+            {
+                if (isClient.Checked)
+                {
+                    txtEntityFilter.AutoCompleteMode = AutoCompleteMode.None;
+                    txtEntityFilter.AutoCompleteSource = AutoCompleteSource.None;
+                    txtEntityFilter.AutoCompleteCustomSource.Clear();
+                    List<string> jarMetas = ReadSingleSection("metadata", entityPath);
+                    foreach (string jarMetaName in jarMetas)
+                    {
+                        txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
+                    }
+                    jarMetas = ReadSingleSection("metadata", bizunitPath);
+                    foreach (string jarMetaName in jarMetas)
+                    {
+                        txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
+                    }
+                    txtEntityFilter.AutoCompleteMode = AutoCompleteMode.Suggest;
+                    txtEntityFilter.AutoCompleteSource = AutoCompleteSource.CustomSource;
+                }
+            };
+            txtEntityFilter.Invoke(actionDelegate2, str);
+        }
+
+        // 读取指定区域Keys列表。
+        public List<string> ReadSingleSection(string Section, string iniFilename)
+        {
+            List<string> result = new List<string>();
+            byte[] buf = new byte[2097152];
+            uint lenf = GetPrivateProfileString(Section, null, null, buf, (uint)buf.Length, iniFilename);
+            int j = 0;
+            for (int i = 0; i < lenf; i++)
+                if (buf[i] == 0)
+                {
+                    result.Add(Encoding.Default.GetString(buf, j, i - j));
+                    j = i + 1;
+                }
+            return result;
+        }
+
+        private void entityTable_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar.ToString().ToUpper() == "Q")
+            {
+                Console.WriteLine("QQQQQQQQQQQQQQQ");
+                if (dropDown != null)
+                {
+                    if (thisTableNode != null)
+                    {
+                        DataGridViewRow row = entityTable.Rows[0];
+                        string mainTable = row.Cells[2].Value.ToString();
+                        string alias = "main";
+                        //查询部分
+                        StringBuilder selectStr = new StringBuilder();
+                        //子分录 或F7 表连接
+                        StringBuilder entrySql = new StringBuilder();
+                        DataGridViewSelectedCellCollection selectCells = entityTable.SelectedCells;
+                        HashSet<int> rowIndexs = new HashSet<int>();
+                        foreach (DataGridViewCell selectCell in selectCells)
+                        {
+                            rowIndexs.Add(selectCell.RowIndex);
+                        }
+                        foreach (int index in rowIndexs)
+                        {
+                            DataGridViewRow selectRow = entityTable.Rows[index];
+                            if (selectRow.Index == 0)
+                            {
+                                continue;
+                            }
+                            var zorValue = selectRow.Cells[0].Value;
+                            var twoValue = selectRow.Cells[2].Value;
+                            var thrValue = selectRow.Cells[3].Value;
+                            var forValue = selectRow.Cells[4].Value;
+                            if (zorValue == null || twoValue == null || thrValue == null || forValue == null)
+                            {
+                                continue;
+                            }
+                            string columnAlias = zorValue.ToString();
+                            if (twoValue.ToString() == "" && thrValue.ToString() == "")
+                            {
+                                continue;
+                            }
+                            if (twoValue.ToString() != "" && thrValue.ToString() != "" && forValue.ToString() == "")
+                            {
+                                //F7 字段 和表
+                                string key = twoValue.ToString();
+                                string f7TableName = thrValue.ToString();
+                                entrySql.Append("left join ").Append(f7TableName).Append(" ");
+                                entrySql.Append(columnAlias).Append(" on ").Append(columnAlias).Append(".fid");
+                                entrySql.Append("=#1.").Append(key);
+                                entrySql.Append(Environment.NewLine);
+                            }
+                            else if (twoValue.ToString() != "" && thrValue.ToString() != "" && forValue.ToString() != "")
+                            {
+                                //当前表字段--枚举
+                                selectStr.Append("#1.").Append(twoValue.ToString()).Append(" ").Append(columnAlias).Append(",");
+                                selectStr.Append(Environment.NewLine);
+                            }
+                            else if (twoValue.ToString() != "" && thrValue.ToString() == "")
+                            {
+                                //当前表字段
+                                selectStr.Append("#1.").Append(twoValue.ToString()).Append(" ").Append(columnAlias).Append(",");
+                                selectStr.Append(Environment.NewLine);
+                            }
+
+                            else if (twoValue.ToString() == "" && thrValue.ToString() != "")
+                            {
+                                //下级分录
+                                string f7TableName = thrValue.ToString();
+                                entrySql.Append("left join ").Append(f7TableName).Append(" ");
+                                entrySql.Append(columnAlias).Append(" on ").Append(columnAlias).Append(".fparentid");
+                                entrySql.Append("=#1.fid");
+                                entrySql.Append(Environment.NewLine);
+                            }
+                        }
+                        selectStr.Append("#1.fid ID").Append(Environment.NewLine); ;
+                        //SQL主体
+                        StringBuilder sql = new StringBuilder();
+                        sql.Append("select").Append(Environment.NewLine); ;
+                        //sql.Append("#1.*").Append(Environment.NewLine);
+                        sql.Append(selectStr);
+                        sql.Append("from #0 #1").Append(Environment.NewLine);
+                        sql.Append(entrySql);
+                        //替换
+                        sql.Replace("#0", mainTable);
+                        sql.Replace("#1", alias);
+                        txtSql.Text = sql.ToString();
+                    }
+                    dropDown.Show(this, 880, 300);
+                }
+            }
+        }
     }
 }

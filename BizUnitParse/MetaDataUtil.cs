@@ -155,11 +155,14 @@ namespace EntityParse
             setMetaDataAlias(entityInfo);
             foreach (FieldInfo fieldInfo in entityInfo.fields)
             {
-                Dictionary<string, string> langMap = entityInfo.rs[fieldInfo.alias];
-                string langName = getLangName(langMap);
-                if (langName != null)
+                if (entityInfo.rs.ContainsKey(fieldInfo.alias))
                 {
-                    fieldInfo.alias = langName;
+                    Dictionary<string, string> langMap = entityInfo.rs[fieldInfo.alias];
+                    string langName = getLangName(langMap);
+                    if (langName != null)
+                    {
+                        fieldInfo.alias = langName;
+                    }
                 }
             }
             entityInfo.fullName = entityInfo.package + "." + entityInfo.name;
@@ -217,7 +220,7 @@ namespace EntityParse
                 }
             }
             setMetaDataAlias(relationInfo);
-
+            relationInfo.fullName = relationInfo.package + "." + relationInfo.name;
             relationMap[relationInfo.fullName] = relationInfo;
             return relationInfo;
         }
@@ -260,19 +263,19 @@ namespace EntityParse
                         foreach (XmlNode proNode in proNodeList)
                         {
                             string proName = proNode.Name;
-                            if (childNodeName == "name")
+                            if (proName == "name")
                             {
                                 enumValueInfo.name = proNode.InnerText;
                             }
-                            else if (childNodeName == "alias")
+                            else if (proName == "alias")
                             {
                                 enumValueInfo.alias = proNode.InnerText;
                             }
-                            else if (childNodeName == "userDefined")
+                            else if (proName == "userDefined")
                             {
                                 enumValueInfo.userDefined = proNode.InnerText;
                             }
-                            else if (childNodeName == "value")
+                            else if (proName == "value")
                             {
                                 enumValueInfo.value = proNode.InnerText;
                             }
@@ -289,13 +292,21 @@ namespace EntityParse
             setMetaDataAlias(enumInfo);
             foreach (EnumValueInfo enumValueInfo in enumInfo.enumValues)
             {
-                Dictionary<string, string> langMap = enumInfo.rs[enumValueInfo.alias];
-                string langName = getLangName(langMap);
-                if (langName != null)
+                if (enumValueInfo.alias == null)
                 {
-                    enumValueInfo.alias = langName;
+                    continue;
+                }
+                if (enumInfo.rs.ContainsKey(enumValueInfo.alias))
+                {
+                    Dictionary<string, string> langMap = enumInfo.rs[enumValueInfo.alias];
+                    string langName = getLangName(langMap);
+                    if (langName != null)
+                    {
+                        enumValueInfo.alias = langName;
+                    }
                 }
             }
+            enumInfo.fullName = enumInfo.package + "." + enumInfo.name;
             enumMap[enumInfo.fullName] = enumInfo;
             return enumInfo;
         }
@@ -379,6 +390,7 @@ namespace EntityParse
         {
             string fullName = path.Replace(baseDir,"");
             fullName = fullName.Replace("\\", ".");
+            fullName = fullName.Replace("/", ".");
             return fullName.Substring(0,fullName.LastIndexOf("."));
         }
 
@@ -434,7 +446,7 @@ namespace EntityParse
 
         public static void setMetaDataAlias(MetaDataInfo metaData)
         {
-            if (metaData.rs[metaData.alias] != null)
+            if (metaData.alias != null && metaData.rs.ContainsKey(metaData.alias) && metaData.rs[metaData.alias] != null)
             {
                 Dictionary<string, string> langMap = metaData.rs[metaData.alias];
                 string langName = getLangName(langMap);
