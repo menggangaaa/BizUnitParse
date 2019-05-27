@@ -94,11 +94,6 @@ namespace BizUnitParse
             string outString;
             try
             {
-                GetValue("Information", "path", out outString, basePath);
-                if (outString != null && outString.Length > 0)
-                {
-                    txtDirPath.Text = outString;
-                }
                 GetValue("Information", "select", out outString, basePath);
                 if (outString != null && outString.Length > 0)
                 {
@@ -110,6 +105,11 @@ namespace BizUnitParse
                     {
                         isClient.Checked = true;
                     }
+                }
+                GetValue("Information", "path", out outString, basePath);
+                if (outString != null && outString.Length > 0)
+                {
+                    txtDirPath.Text = outString;
                 }
                 GetValue("Information", "isInitJar", out outString, basePath);
                 if (outString == null || outString.Length == 0 || outString == "0")
