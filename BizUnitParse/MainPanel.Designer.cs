@@ -202,6 +202,7 @@
             this.entityTable.TabIndex = 13;
             this.entityTable.DoubleClick += new System.EventHandler(this.entityTable_DoubleClick);
             this.entityTable.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.entityTable_KeyPress);
+            this.entityTable.MouseDown += new System.Windows.Forms.MouseEventHandler(this.entityTable_MouseDown);
             // 
             // column
             // 
@@ -252,6 +253,7 @@
             this.relPath.Name = "relPath";
             this.relPath.ReadOnly = true;
             this.relPath.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
+            this.relPath.Visible = false;
             this.relPath.Width = 120;
             // 
             // MainPanel
@@ -276,6 +278,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(5);
             this.Name = "MainPanel";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "业务单元解析";
             this.Activated += new System.EventHandler(this.MainPanel_Activated);
             this.Load += new System.EventHandler(this.MainPanel_Load);

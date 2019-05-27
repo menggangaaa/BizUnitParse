@@ -38,12 +38,12 @@ namespace EntityParse
                 XmlNode aliasNode = root.SelectSingleNode("ns:alias", nsMgr);
                 if (aliasNode != null)
                 {
-                    string aliasName = aliasNode.InnerText;
+                    string aliasName = aliasNode.InnerText.Trim();
                     XmlNodeList rsList = root.SelectNodes("ns:resource/ns:rs", nsMgr);
                     foreach (XmlNode rs in rsList)
                     {
                         string key = rs.Attributes["key"].Value;
-                        if (key == aliasName)
+                        if (key.Trim() == aliasName)
                         {
                             foreach (XmlNode lang in rs.ChildNodes)
                             {
@@ -70,8 +70,8 @@ namespace EntityParse
         {
             XmlDocument xml = new XmlDocument();
             xml.Load(reader);
-            XmlNamespaceManager nsMgr = new XmlNamespaceManager(xml.NameTable);
-            nsMgr.AddNamespace("ns", "com.kingdee.bos.metadata");
+            //XmlNamespaceManager nsMgr = new XmlNamespaceManager(xml.NameTable);
+            //nsMgr.AddNamespace("ns", "com.kingdee.bos.metadata");
             XmlNode root = xml.LastChild;
             //MD5 md5 = new MD5CryptoServiceProvider();
             if (root.Name == "entityObject")
@@ -311,7 +311,6 @@ namespace EntityParse
             return enumInfo;
         }
 
-
         public static void propertiesParse(XmlNode propertiesNode, EntityInfo entityInfo)
         {
             XmlNodeList propertyNodeList = propertiesNode.ChildNodes;
@@ -391,7 +390,7 @@ namespace EntityParse
             string fullName = path.Replace(baseDir,"");
             fullName = fullName.Replace("\\", ".");
             fullName = fullName.Replace("/", ".");
-            return fullName.Substring(0,fullName.LastIndexOf("."));
+            return fullName.Substring(0, fullName.LastIndexOf("."));
         }
 
         public static string getPath(string fullName,MetaDataTypeEnum metaDataType)
@@ -436,12 +435,29 @@ namespace EntityParse
 
         public static EntityInfo getEntity(string fullName)
         {
-            return entityMap[fullName];
+            if (entityMap.ContainsKey(fullName))
+            {
+                return entityMap[fullName];
+            }
+            return null;
         }
 
         public static RelationInfo getRelation(string fullName)
         {
-            return relationMap[fullName];
+            if (relationMap.ContainsKey(fullName))
+            {
+                return relationMap[fullName];
+            }
+            return null;
+        }
+
+        public static EnumInfo getEnum(string fullName)
+        {
+            if (enumMap.ContainsKey(fullName))
+            {
+                return enumMap[fullName];
+            }
+            return null;
         }
 
         public static void setMetaDataAlias(MetaDataInfo metaData)
@@ -497,6 +513,33 @@ namespace EntityParse
                 metaDateType = MetaDataTypeEnum.ui;
             }
             return metaDateType;
+        }
+
+        //获取包名或者业务单元名称
+        public static string getBizEntityPK(XmlTextReader reader)
+        {
+            string entityPK = "";
+            if (reader == null)
+            {
+                return entityPK;
+            }
+            XmlDocument xml = new XmlDocument();
+            xml.Load(reader);
+            XmlNode root = xml.LastChild;
+            if (root != null)
+            {
+                XmlNodeList proNodeList = root.ChildNodes;
+                foreach (XmlNode proNode in proNodeList)
+                {
+                    string proName = proNode.Name;
+                    if (proName == "entityPK")
+                    {
+                        entityPK = proNode.InnerText;
+                        break;
+                    }
+                }
+            }
+            return entityPK;
         }
     }
 

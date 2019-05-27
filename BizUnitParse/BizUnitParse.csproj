@@ -54,6 +54,12 @@
   <ItemGroup>
     <Compile Include="EntityInfo.cs" />
     <Compile Include="EnumInfo.cs" />
+    <Compile Include="EnumUI.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EnumUI.Designer.cs">
+      <DependentUpon>EnumUI.cs</DependentUpon>
+    </Compile>
     <Compile Include="EnumValueInfo.cs" />
     <Compile Include="FieldInfo.cs" />
     <Compile Include="MainPanel.cs">
@@ -70,6 +76,9 @@
     <Compile Include="RelationInfo.cs" />
     <Compile Include="ResourceInfo.cs" />
     <Compile Include="TableDataLink.cs" />
+    <EmbeddedResource Include="EnumUI.resx">
+      <DependentUpon>EnumUI.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainPanel.resx">
       <DependentUpon>MainPanel.cs</DependentUpon>
     </EmbeddedResource>

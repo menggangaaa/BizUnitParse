@@ -1,6 +1,7 @@
 ﻿using EntityParse;
 using ICSharpCode.SharpZipLib.Zip;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -53,7 +54,14 @@ namespace BizUnitParse
         }
         public void initBaseDir()
         {
-            MetaDataUtil.baseDir = txtDirPath.Text + "\\metadata\\";
+            if (isIDE.Checked)
+            {
+                MetaDataUtil.baseDir = txtDirPath.Text + "\\metadata\\";
+            }
+            else if (isClient.Checked)
+            {
+                MetaDataUtil.baseDir = txtDirPath.Text + "\\metas\\";
+            }
         }
 
         public MainPanel()
@@ -108,13 +116,13 @@ namespace BizUnitParse
                 {
                     //未初始化jar包列表,初始化jar包列表
                     //initJarMetaDice(null);
-                    labFilter.Visible = true;
+                    labInitJar.Visible = true;
                     initJarBar.Visible = false;
                     initJarBar.Value = 0;
                 }
                 else
                 {
-                    labFilter.Visible = false;
+                    labInitJar.Visible = false;
                     initJarBar.Visible = true;
                     initJarBar.Value = 100;
                 }
@@ -131,21 +139,7 @@ namespace BizUnitParse
                 initTree();
             }
 
-            List<string> jarMetas = ReadSingleSection("metadata", entityPath);
-            foreach (string jarMetaName in jarMetas)
-            {
-                txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
-            }
-            jarMetas = ReadSingleSection("metadata", bizunitPath);
-            foreach (string jarMetaName in jarMetas)
-            {
-                txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
-            }
-
-            //设置文本框下拉显示
-            txtEntityFilter.AutoCompleteMode = AutoCompleteMode.Suggest;
-            txtEntityFilter.AutoCompleteSource = AutoCompleteSource.CustomSource;
-            txtEntityFilter.Focus();
+            initTxtEntityFilter();
 
             initSqlPanel();
         }
@@ -174,6 +168,27 @@ namespace BizUnitParse
             txtSql.KeyDown += TxtSql_KeyDown;
         }
 
+        //初始化实体过滤框
+        public void initTxtEntityFilter()
+        {
+            txtEntityFilter.AutoCompleteMode = AutoCompleteMode.None;
+            txtEntityFilter.AutoCompleteSource = AutoCompleteSource.None;
+            List<string> jarMetas = ReadSingleSection("metadata", entityToPackagePath);
+            foreach (string jarMetaName in jarMetas)
+            {
+                txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
+            }
+            jarMetas = ReadSingleSection("metadata", bizunitPath);
+            foreach (string jarMetaName in jarMetas)
+            {
+                txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
+            }
+
+            //设置文本框下拉显示
+            txtEntityFilter.AutoCompleteMode = AutoCompleteMode.Suggest;
+            txtEntityFilter.AutoCompleteSource = AutoCompleteSource.CustomSource;
+            txtEntityFilter.Focus();
+        }
         private void TxtSql_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Control && e.KeyCode == Keys.A)
@@ -184,22 +199,93 @@ namespace BizUnitParse
 
         private void txtDirPath_TextChanged(object sender, EventArgs e)
         {
-
+            if (isIDE.Checked)
+            {
+                if (Directory.Exists(txtDirPath.Text + "\\metadata\\com\\kingdee\\eas\\hse\\scm") == true)
+                {
+                    WritePrivateProfileString("Information", "path", txtDirPath.Text, basePath);
+                    initBaseDir();
+                    initTree();
+                }
+                else
+                {
+                    MessageBox.Show("选择的文件夹不是项目的根目录,请重新选择!");
+                }
+            }
+            else if (isClient.Checked)
+            {
+                if (Directory.Exists(txtDirPath.Text + "\\metas") == true)
+                {
+                    WritePrivateProfileString("Information", "path", txtDirPath.Text, basePath);
+                    initBaseDir();
+                }
+                else
+                {
+                    MessageBox.Show("选择的文件夹不是客户端的根目录,请重新选择!");
+                }
+            }
         }
 
         private void btnDirPathSelect_Click(object sender, EventArgs e)
         {
-
+            FolderBrowserDialog folder = new FolderBrowserDialog();
+            folder.Description = "选择项目根目录";
+            folder.SelectedPath = txtDirPath.Text;
+            if (folder.ShowDialog() == DialogResult.OK)
+            {
+                //\\scm
+                if (isIDE.Checked)
+                {
+                    if (Directory.Exists(folder.SelectedPath + "\\metadata\\com\\kingdee\\eas\\hse\\scm") == true)
+                    {
+                        txtDirPath.Text = folder.SelectedPath;
+                        WritePrivateProfileString("Information", "path", txtDirPath.Text, basePath);
+                        initBaseDir();
+                        initTree();
+                    }
+                    else
+                    {
+                        MessageBox.Show("选择的文件夹不是项目的根目录,请重新选择!");
+                    }
+                }
+                else if (isClient.Checked)
+                {
+                    if (Directory.Exists(folder.SelectedPath + "\\metas") == true)
+                    {
+                        txtDirPath.Text = folder.SelectedPath;
+                        WritePrivateProfileString("Information", "path", txtDirPath.Text, basePath);
+                        initBaseDir();
+                    }
+                    else
+                    {
+                        MessageBox.Show("选择的文件夹不是客户端的根目录,请重新选择!");
+                    }
+                }
+            }
         }
 
         private void isIDE_CheckedChanged(object sender, EventArgs e)
         {
-
+            if (isIDE.Checked)
+            {
+                WritePrivateProfileString("Information", "select", "1", basePath);
+            }
+            else if (isClient.Checked)
+            {
+                WritePrivateProfileString("Information", "select", "2", basePath);
+            }
         }
 
         private void isClient_CheckedChanged(object sender, EventArgs e)
         {
-
+            if (isIDE.Checked)
+            {
+                WritePrivateProfileString("Information", "select", "1", basePath);
+            }
+            else if (isClient.Checked)
+            {
+                WritePrivateProfileString("Information", "select", "2", basePath);
+            }
         }
 
         private void btnInitJar_Click(object sender, EventArgs e)
@@ -259,12 +345,21 @@ namespace BizUnitParse
 
         private void btnLeft_Click(object sender, EventArgs e)
         {
-
+            if (thisTableNode != null && thisTableNode.upNode != null)
+            {
+                thisTableNode.upNode.downNode = thisTableNode;
+                thisTableNode = thisTableNode.upNode;
+                mainEntityParse(thisTableNode.entity);
+            }
         }
 
         private void btnRight_Click(object sender, EventArgs e)
         {
-
+            if (thisTableNode != null && thisTableNode.downNode != null)
+            {
+                thisTableNode = thisTableNode.downNode;
+                mainEntityParse(thisTableNode.entity);
+            }
         }
 
         private void txtEntityFilter_TextChanged(object sender, EventArgs e)
@@ -272,9 +367,81 @@ namespace BizUnitParse
 
         }
 
+        public EnumUI enumUI;
         private void entityTable_DoubleClick(object sender, EventArgs e)
         {
-            
+            if (entityTable.CurrentRow == null || entityTable.Rows[entityTable.CurrentRow.Index] == null)
+            {
+                return;
+            }
+            DataGridViewCellCollection cells = entityTable.Rows[entityTable.CurrentRow.Index].Cells;
+            if (cells[5].Value == null)
+            {
+                return;
+            }
+            object dataType = cells[4].Value;
+            string fullName = cells[5].Value.ToString();
+            string fieldName = cells[0].Value.ToString();
+            if (empToValue(dataType) == "")
+            {
+                RelationInfo relation = MetaDataUtil.getRelation(fullName);
+                if (relation != null)
+                {
+                    string supplier = relation.supplierObject;
+                    if (fieldName == "parent")
+                    {
+                        supplier = relation.clientObject;
+                    }
+                    string path = MetaDataUtil.getPath(supplier, MetaDataTypeEnum.entity);
+                    if (File.Exists(path))
+                    {
+                        XmlDocument xml = new XmlDocument();
+                        xml.Load(new XmlTextReader(path));
+                        XmlNode root = xml.LastChild;
+                        MetaDataUtil.entityParse(root);
+                    }
+                    else if (!MetaDataUtil.entityMap.ContainsKey(supplier) || MetaDataUtil.entityMap[supplier] == null)
+                    {
+                        string jarPath = "";
+                        GetValue("metadata", supplier, out jarPath, entityPath);
+                        if (jarPath != null || jarPath.Length > 0)
+                        {
+                            //存在对应jar包
+                            initJarFile(jarPath);
+                        }
+                    }
+                    mainEntityParse(supplier);
+                }
+            }
+            else if ("Enum".Equals(dataType))
+            {
+                EnumInfo enumInfo = enumParse(fullName);
+                if (enumUI == null)
+                {
+                    enumUI = new EnumUI();
+                }
+                enumUI.ShowDialog(enumInfo);
+            }
+        }
+
+        public EnumInfo enumParse(string fullName)
+        {
+            string path = MetaDataUtil.getPath(fullName, MetaDataTypeEnum.enums);
+            if (File.Exists(path))
+            {
+                MetaDataUtil.metadataParse(new XmlTextReader(path));
+            }
+            else
+            {
+                string jarPath = "";
+                GetValue("metadata", fullName, out jarPath, enumPath);
+                if (jarPath != null || jarPath.Length > 0)
+                {
+                    //存在对应jar包
+                    initJarFile(jarPath);
+                }
+            }
+            return MetaDataUtil.getEnum(fullName);
         }
 
         private void bizUnitTree_DoubleClick(object sender, EventArgs e)
@@ -416,59 +583,105 @@ namespace BizUnitParse
             {
                 //在左边树中可以找到
                 TreeNode node = bizUnitTree.SelectedNode;
-                if (node == null || node.Nodes == null)
+                if (node == null || node.Nodes == null || node.Nodes.Count != 0)
                 {
                     entityTable.Rows.Clear();
                     txtFilter.Text = "";
                     return;
                 }
-                if (node.Nodes.Count == 0)
-                {
-                    string path = node.Tag.ToString();
-                    //xmlParse(path);
-                    XmlTextReader reader = new XmlTextReader(path);
-                    MetaDataUtil.metadataParse(reader);
-                    string fullName = MetaDataUtil.getFullName(path);
-                    if (MetaDataUtil.entityMap.ContainsKey(fullName) && MetaDataUtil.entityMap[fullName] != null)
-                    {
-                        EntityInfo entityInfo = MetaDataUtil.entityMap[fullName];
-                        entityTable.Rows.Clear();
-                        fillTableEntity(entityInfo);
-                    }
-                }
-                else
-                {
-                    entityTable.Rows.Clear();
-                    txtFilter.Text = "";
-                }
+                ideEntityParse(node.Tag.ToString());
             }
             else
             {
-                //在左边树中找不到
-                string outString = "";
-                //GetValue("JarFileList", textBox3.Text, out outString, basePath);
-                GetValue("metadata", txtEntityFilter.Text, out outString, entityPath);
-                if (outString.Length > 0)
+                //在左边树中找不到--去包中查找
+                string fullName = "";
+                GetValue("metadata", txtEntityFilter.Text, out fullName, bizunitPath);
+                if (fullName == null || fullName.Length == 0)
                 {
-                    string path = txtDirPath.Text + "\\metadata\\" + txtEntityFilter.Text;
-                    //xmlParse(path);
+                    GetValue("metadata", txtEntityFilter.Text, out fullName, entityToPackagePath);
                 }
-                else
+                if (fullName != null || fullName.Length > 0)
                 {
-                    GetValue("metadata", txtEntityFilter.Text, out outString, bizunitPath);
-                    if (outString.Length > 0)
+                    //先从当前已二次开发环境中查找--开发环境,存在重新加载
+                    string path = MetaDataUtil.getPath(fullName, MetaDataTypeEnum.entity);
+                    if (isIDE.Checked && File.Exists(path))
                     {
-                        string entityName = outString;
-                        GetValue("metadata", entityName, out outString, entityPath);
-                        if (outString.Length > 0)
+                        ideEntityParse(path);
+                    }
+                    else
+                    {
+                        if (MetaDataUtil.entityMap.ContainsKey(fullName) && MetaDataUtil.entityMap[fullName] != null)
                         {
-                            string path = txtDirPath.Text + "\\metadata\\" + entityName;
-                            //xmlParse(path);
+                            //已从jar中解析过实体,直接读取
+                            mainEntityParse(fullName);
+                        }
+                        else
+                        {
+                            string jarPath = "";
+                            GetValue("metadata", fullName, out jarPath, entityPath);
+                            if (jarPath != null || jarPath.Length > 0)
+                            {
+                                //存在对应jar包
+                                initJarFile(jarPath);
+                                mainEntityParse(fullName);
+                            }
                         }
                     }
                 }
             }
 
+        }
+
+        //开发环境解析实体 path--文件路径
+        public void ideEntityParse(string path)
+        {
+            XmlTextReader reader = new XmlTextReader(path);
+            MetaDataUtil.metadataParse(reader);
+            string fullName = MetaDataUtil.getFullName(path);
+            mainEntityParse(fullName);
+        }
+
+        public void mainEntityParse(string fullName)
+        {
+            EntityInfo entityInfo = MetaDataUtil.getEntity(fullName);
+            if (entityInfo != null)
+            {
+                TableDataLink tableNode = new TableDataLink();
+                tableNode.entity = entityInfo;
+                if (thisTableNode != null)
+                {
+                    tableNode.upNode = thisTableNode;
+                }
+                thisTableNode = tableNode;
+
+                entityTable.Rows.Clear();
+                foreach (DataGridViewColumn column in entityTable.Columns)
+                {
+                    column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                }
+                fillTableEntity(entityInfo);
+                foreach (DataGridViewColumn column in entityTable.Columns)
+                {
+                    column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                }
+            }
+        }
+
+        public void mainEntityParse(EntityInfo entityInfo)
+        {
+            if (entityInfo != null)
+            {
+                entityTable.Rows.Clear();
+                foreach (DataGridViewColumn column in entityTable.Columns)
+                {
+                    column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                }
+                fillTableEntity(entityInfo);
+                foreach (DataGridViewColumn column in entityTable.Columns)
+                {
+                    column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
+                }
+            }
         }
 
         private void MainPanel_Activated(object sender, EventArgs e)
@@ -483,18 +696,14 @@ namespace BizUnitParse
             {
                 return;
             }
-            foreach (DataGridViewColumn column in entityTable.Columns)
-            {
-                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-            }
-            //textBox4.Text = ((ArrayList)list[0])[2].ToString();
-
             //表字段
             int index = entityTable.Rows.Add();
             entityTable.Rows[index].Cells[0].Value = info.name;
             entityTable.Rows[index].Cells[1].Value = info.alias;
             entityTable.Rows[index].Cells[2].Value = info.tableName;
             entityTable.Rows[index].Cells[3].Value = info.bosType;
+            entityTable.Rows[index].Cells[4].Value = "";
+            entityTable.Rows[index].Cells[5].Value = "";
             entityTable.Rows.Add();
             foreach (FieldInfo fieldInfo in info.fields)
             {
@@ -507,16 +716,16 @@ namespace BizUnitParse
                 if (fieldInfo.relationship != null)
                 {
                     entityTable.Rows[index].Cells[5].Value = fieldInfo.relationship;
+                    //从关联关系中找到下游关系表
+                    string tableName = getRelationToEntityTableName(fieldInfo.relationship, fieldInfo.name);
+                    entityTable.Rows[index].Cells[3].Value = tableName;
                 }
-                else if(fieldInfo.metadataRef != null)
+                else if (fieldInfo.metadataRef != null)
                 {
                     entityTable.Rows[index].Cells[5].Value = fieldInfo.metadataRef;
                 }
             }
-            foreach (DataGridViewColumn column in entityTable.Columns)
-            {
-                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells;
-            }
+            //基类实体
             if (info.baseEntity != null)
             {
                 //递归添加
@@ -527,7 +736,7 @@ namespace BizUnitParse
                     EntityInfo baseEntity = MetaDataUtil.entityMap[info.baseEntity];
                     fillTableEntity(baseEntity);
                 }
-                else if(info.baseEntity != null)
+                else if (info.baseEntity != null)
                 {
                     //未初始化对象
                     string path = MetaDataUtil.getPath(info.baseEntity, MetaDataTypeEnum.entity);
@@ -558,7 +767,6 @@ namespace BizUnitParse
                         }
                     }
                 }
-                //
             }
         }
         #endregion
@@ -585,6 +793,7 @@ namespace BizUnitParse
             {
                 return;
             }
+            Console.WriteLine(path);
             ZipInputStream zipStream = new ZipInputStream(File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read));
             ZipEntry entry = zipStream.GetNextEntry();
             Dictionary<string, byte[]> dict = new Dictionary<string, byte[]>();
@@ -608,7 +817,7 @@ namespace BizUnitParse
                         {
                             matePath = path.Replace(txtDirPath.Text + "\\basemetas\\", "");
                         }
-                        else if(isClient.Checked)
+                        else if (isClient.Checked)
                         {
                             matePath = path.Replace(txtDirPath.Text + "\\metas\\", "");
                         }
@@ -636,7 +845,8 @@ namespace BizUnitParse
             if (entryName.IndexOf(".entity") > -1)
             {
                 WritePrivateProfileString("metadata", mateName, metaPath, entityPath);
-                WritePrivateProfileString("metadata", mateName, entryName, entityToPackagePath);
+                int last = entryName.LastIndexOf("/");
+                WritePrivateProfileString("metadata", entryName.Substring(last + 1, entryName.Length - last - 1), mateName, entityToPackagePath);
             }
             else if (entryName.IndexOf(".relation") > -1)
             {
@@ -648,13 +858,16 @@ namespace BizUnitParse
             }
             else if (entryName.IndexOf(".bizunit") > -1)
             {
-                string name = MetaDataUtil.getBizOrPackAlias(reader, MetaDataTypeEnum.bizUnit);
-                WritePrivateProfileString("metadata", name, mateName.Replace(".bizunit", ".entity"), bizunitPath);
+                stream.Position = 0;
+                string name = MetaDataUtil.getBizOrPackAlias(new XmlTextReader(stream), MetaDataTypeEnum.bizUnit);
+                stream.Position = 0;
+                string entityPK = MetaDataUtil.getBizEntityPK(new XmlTextReader(stream));
+                WritePrivateProfileString("metadata", name, entityPK, bizunitPath);
             }
             else if (entryName.IndexOf(".package") > -1)
             {
-               
-                string name = MetaDataUtil.getBizOrPackAlias(reader, MetaDataTypeEnum.package);
+                stream.Position = 0;
+                string name = MetaDataUtil.getBizOrPackAlias(new XmlTextReader(stream), MetaDataTypeEnum.package);
                 WritePrivateProfileString("metadata", name, entryName.Substring(0, entryName.LastIndexOf(".")), packagePath);
             }
             reader.Close();
@@ -726,26 +939,10 @@ namespace BizUnitParse
             WritePrivateProfileString("Information", "isInitJar", "1", basePath);
             Action<string> actionDelegate2 = (x) =>
             {
-                if (isClient.Checked)
-                {
-                    txtEntityFilter.AutoCompleteMode = AutoCompleteMode.None;
-                    txtEntityFilter.AutoCompleteSource = AutoCompleteSource.None;
-                    txtEntityFilter.AutoCompleteCustomSource.Clear();
-                    List<string> jarMetas = ReadSingleSection("metadata", entityPath);
-                    foreach (string jarMetaName in jarMetas)
-                    {
-                        txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
-                    }
-                    jarMetas = ReadSingleSection("metadata", bizunitPath);
-                    foreach (string jarMetaName in jarMetas)
-                    {
-                        txtEntityFilter.AutoCompleteCustomSource.Add(jarMetaName);
-                    }
-                    txtEntityFilter.AutoCompleteMode = AutoCompleteMode.Suggest;
-                    txtEntityFilter.AutoCompleteSource = AutoCompleteSource.CustomSource;
-                }
+                initTxtEntityFilter();
             };
             txtEntityFilter.Invoke(actionDelegate2, str);
+            MessageBox.Show("初始化成功!!!");
         }
 
         // 读取指定区域Keys列表。
@@ -768,7 +965,7 @@ namespace BizUnitParse
         {
             if (e.KeyChar.ToString().ToUpper() == "Q")
             {
-                Console.WriteLine("QQQQQQQQQQQQQQQ");
+                //Console.WriteLine("QQQQQQQQQQQQQQQ");
                 if (dropDown != null)
                 {
                     if (thisTableNode != null)
@@ -794,45 +991,44 @@ namespace BizUnitParse
                                 continue;
                             }
                             var zorValue = selectRow.Cells[0].Value;
-                            var twoValue = selectRow.Cells[2].Value;
-                            var thrValue = selectRow.Cells[3].Value;
-                            var forValue = selectRow.Cells[4].Value;
-                            if (zorValue == null || twoValue == null || thrValue == null || forValue == null)
+                            var twoValue = empToValue(selectRow.Cells[2].Value);
+                            var thrValue = empToValue(selectRow.Cells[3].Value);
+                            var forValue = empToValue(selectRow.Cells[4].Value);
+                            if (zorValue == null || twoValue == null)
                             {
                                 continue;
                             }
                             string columnAlias = zorValue.ToString();
-                            if (twoValue.ToString() == "" && thrValue.ToString() == "")
+                            if (twoValue.ToString() == "" && thrValue == "")
                             {
                                 continue;
                             }
-                            if (twoValue.ToString() != "" && thrValue.ToString() != "" && forValue.ToString() == "")
+                            string f7TableName = thrValue.ToString();
+                            if (twoValue.ToString() != "" && thrValue != "" && forValue == "")
                             {
                                 //F7 字段 和表
                                 string key = twoValue.ToString();
-                                string f7TableName = thrValue.ToString();
                                 entrySql.Append("left join ").Append(f7TableName).Append(" ");
                                 entrySql.Append(columnAlias).Append(" on ").Append(columnAlias).Append(".fid");
                                 entrySql.Append("=#1.").Append(key);
                                 entrySql.Append(Environment.NewLine);
                             }
-                            else if (twoValue.ToString() != "" && thrValue.ToString() != "" && forValue.ToString() != "")
+                            else if (twoValue.ToString() != "" && thrValue != "" && forValue != "")
                             {
                                 //当前表字段--枚举
                                 selectStr.Append("#1.").Append(twoValue.ToString()).Append(" ").Append(columnAlias).Append(",");
                                 selectStr.Append(Environment.NewLine);
                             }
-                            else if (twoValue.ToString() != "" && thrValue.ToString() == "")
+                            else if (twoValue.ToString() != "" && thrValue == "")
                             {
                                 //当前表字段
                                 selectStr.Append("#1.").Append(twoValue.ToString()).Append(" ").Append(columnAlias).Append(",");
                                 selectStr.Append(Environment.NewLine);
                             }
 
-                            else if (twoValue.ToString() == "" && thrValue.ToString() != "")
+                            else if (twoValue.ToString() == "" && thrValue != "")
                             {
                                 //下级分录
-                                string f7TableName = thrValue.ToString();
                                 entrySql.Append("left join ").Append(f7TableName).Append(" ");
                                 entrySql.Append(columnAlias).Append(" on ").Append(columnAlias).Append(".fparentid");
                                 entrySql.Append("=#1.fid");
@@ -855,6 +1051,89 @@ namespace BizUnitParse
                     dropDown.Show(this, 880, 300);
                 }
             }
+            else if (e.KeyChar == 8)
+            {
+                btnLeft_Click(sender, e);
+            }
+        }
+
+        private void entityTable_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.XButton1)
+            {
+                btnLeft_Click(sender, null);
+            }
+            else if (e.Button == MouseButtons.XButton2)
+            {
+                btnRight_Click(sender, null);
+            }
+        }
+
+        public string getRelationToEntityTableName(string fullName, string fieldName)
+        {
+            string tableName = "";
+            if (fullName == null || fullName.Length == 0)
+            {
+                return tableName;
+            }
+            string path = MetaDataUtil.getPath(fullName, MetaDataTypeEnum.relation);
+            if (!MetaDataUtil.relationMap.ContainsKey(fullName) || MetaDataUtil.relationMap[fullName] == null)
+            {
+                if (File.Exists(path))
+                {
+                    XmlDocument xml = new XmlDocument();
+                    xml.Load(new XmlTextReader(path));
+                    XmlNode root = xml.LastChild;
+                    MetaDataUtil.relationParse(root);
+                }
+                else
+                {
+                    string jarPath = "";
+                    GetValue("metadata", fullName, out jarPath, relationPath);
+                    if (jarPath != null || jarPath.Length > 0)
+                    {
+                        //存在对应jar包
+                        initJarFile(jarPath);
+                    }
+                }
+            }
+
+            RelationInfo relation = MetaDataUtil.getRelation(fullName);
+            if (relation != null)
+            {
+                string supplier = relation.supplierObject;
+                if (fieldName == "parent")
+                {
+                    supplier = relation.clientObject;
+                }
+                if (!MetaDataUtil.entityMap.ContainsKey(supplier) || MetaDataUtil.entityMap[supplier] == null)
+                {
+                    path = MetaDataUtil.getPath(supplier, MetaDataTypeEnum.entity);
+                    if (File.Exists(path))
+                    {
+                        XmlDocument xml = new XmlDocument();
+                        xml.Load(new XmlTextReader(path));
+                        XmlNode root = xml.LastChild;
+                        MetaDataUtil.entityParse(root);
+                    }
+                    else
+                    {
+                        string jarPath = "";
+                        GetValue("metadata", supplier, out jarPath, entityPath);
+                        if (jarPath != null || jarPath.Length > 0)
+                        {
+                            //存在对应jar包
+                            initJarFile(jarPath);
+                        }
+                    }
+                }
+                EntityInfo entityInfo = MetaDataUtil.getEntity(supplier);
+                if (entityInfo != null)
+                {
+                    tableName = entityInfo.tableName;
+                }
+            }
+            return tableName;
         }
     }
 }
