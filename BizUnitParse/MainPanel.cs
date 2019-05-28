@@ -1,7 +1,6 @@
 ﻿using EntityParse;
 using ICSharpCode.SharpZipLib.Zip;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -68,6 +67,13 @@ namespace BizUnitParse
         {
             InitializeComponent();
             txtEntityFilter.Focus();
+            if (Screen.GetWorkingArea(this).Width < 1920)
+            {
+                Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(134)));
+            }
+            #region 窗体缩放
+            //GetAllInitInfo(Controls[0]);
+            #endregion
         }
 
         private void MainPanel_Load(object sender, EventArgs e)
@@ -1134,6 +1140,80 @@ namespace BizUnitParse
                 }
             }
             return tableName;
+        }
+
+
+        #region 控件缩放
+        double formWidth;//窗体原始宽度
+        double formHeight;//窗体原始高度
+        double scaleX;//水平缩放比例
+        double scaleY;//垂直缩放比例
+        Dictionary<string, string> ControlsInfo = new Dictionary<string, string>();//控件中心Left,Top,控件Width,控件Height,控件字体Size
+        #endregion
+        protected void GetAllInitInfo(Control ctrlContainer)
+        {
+            if (ctrlContainer.Parent == this)//获取窗体的高度和宽度
+            {
+                formWidth = Convert.ToDouble(ctrlContainer.Width);
+                formHeight = Convert.ToDouble(ctrlContainer.Height);
+            }
+            foreach (Control item in ctrlContainer.Controls)
+            {
+                if (item.Name.Trim() != "")
+                {
+                    //添加信息：键值：控件名，内容：据左边距离，距顶部距离，控件宽度，控件高度，控件字体。
+                    ControlsInfo.Add(item.Name, (item.Left + item.Width / 2) + "," + (item.Top + item.Height / 2) + "," + item.Width + "," + item.Height + "," + item.Font.Size);
+                }
+                if ((item as UserControl) == null && item.Controls.Count > 0)
+                {
+                    GetAllInitInfo(item);
+                }
+            }
+        }
+        private void ControlsChaneInit(Control ctrlContainer)
+        {
+            scaleX = (Convert.ToDouble(ctrlContainer.Width) / formWidth);
+            scaleY = (Convert.ToDouble(ctrlContainer.Height) / formHeight);
+        }
+        /// <summary>
+        /// 改变控件大小
+        /// </summary>
+        /// <param name="ctrlContainer"></param>
+        private void ControlsChange(Control ctrlContainer)
+        {
+            double[] pos = new double[5];//pos数组保存当前控件中心Left,Top,控件Width,控件Height,控件字体Size
+            foreach (Control item in ctrlContainer.Controls)//遍历控件
+            {
+                if (item.Name.Trim() != "")//如果控件名不是空，则执行
+                {
+                    if ((item as UserControl) == null && item.Controls.Count > 0)//如果不是自定义控件
+                    {
+                        ControlsChange(item);//循环执行
+                    }
+                    string[] strs = ControlsInfo[item.Name].Split(',');//从字典中查出的数据，以‘，’分割成字符串组
+
+                    for (int i = 0; i < 5; i++)
+                    {
+                        pos[i] = Convert.ToDouble(strs[i]);//添加到临时数组
+                    }
+                    double itemWidth = pos[2] * scaleX;     //计算控件宽度，double类型
+                    double itemHeight = pos[3] * scaleY;    //计算控件高度
+                    item.Left = Convert.ToInt32(pos[0] * scaleX - itemWidth / 2);//计算控件距离左边距离
+                    item.Top = Convert.ToInt32(pos[1] * scaleY - itemHeight / 2);//计算控件距离顶部距离
+                    item.Width = Convert.ToInt32(itemWidth);//控件宽度，int类型
+                    item.Height = Convert.ToInt32(itemHeight);//控件高度
+                    item.Font = new Font(item.Font.Name, float.Parse((pos[4] * Math.Min(scaleX, scaleY)).ToString()));//字体
+                }
+            }
+        }
+
+        private void MainPanel_SizeChanged(object sender, EventArgs e)
+        {
+            if (ControlsInfo.Count > 0)//如果字典中有数据，即窗体改变
+            {
+                ControlsChaneInit(Controls[0]);//表示pannel控件
+                ControlsChange(Controls[0]);
+            }
         }
     }
 }

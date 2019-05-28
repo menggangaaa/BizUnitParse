@@ -258,7 +258,8 @@
             // 
             // MainPanel
             // 
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(10F, 19F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1284, 761);
             this.Controls.Add(this.entityTable);
             this.Controls.Add(this.bizUnitTree);
@@ -282,6 +283,7 @@
             this.Text = "业务单元解析";
             this.Activated += new System.EventHandler(this.MainPanel_Activated);
             this.Load += new System.EventHandler(this.MainPanel_Load);
+            this.SizeChanged += new System.EventHandler(this.MainPanel_SizeChanged);
             ((System.ComponentModel.ISupportInitialize)(this.entityTable)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

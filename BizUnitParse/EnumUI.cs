@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Collections;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace BizUnitParse
@@ -9,6 +9,10 @@ namespace BizUnitParse
         public EnumUI()
         {
             InitializeComponent();
+            if (Screen.GetWorkingArea(this).Width < 1920)
+            {
+                Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(134)));
+            }
         }
 
         private void EnumUI_Load(object sender, EventArgs e)
