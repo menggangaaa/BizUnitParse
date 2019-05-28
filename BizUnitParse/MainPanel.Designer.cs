@@ -172,6 +172,8 @@
             // 
             // bizUnitTree
             // 
+            this.bizUnitTree.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.bizUnitTree.Font = new System.Drawing.Font("宋体", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.bizUnitTree.Location = new System.Drawing.Point(5, 75);
             this.bizUnitTree.Name = "bizUnitTree";
@@ -181,6 +183,9 @@
             // 
             // entityTable
             // 
+            this.entityTable.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.entityTable.BackgroundColor = System.Drawing.SystemColors.GradientInactiveCaption;
             this.entityTable.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.entityTable.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
