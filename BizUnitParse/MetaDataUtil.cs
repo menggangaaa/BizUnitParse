@@ -62,7 +62,6 @@ namespace EntityParse
                     }
                 }
             }
-            reader.Close();
             return alias;
         }
 

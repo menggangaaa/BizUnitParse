@@ -866,6 +866,8 @@ namespace BizUnitParse
             }
             else if (entryName.IndexOf(".bizunit") > -1)
             {
+                memory = new MemoryStream(data);
+                stream = new BufferedStream(memory);
                 stream.Position = 0;
                 string name = MetaDataUtil.getBizOrPackAlias(new XmlTextReader(stream), MetaDataTypeEnum.bizUnit);
                 stream.Position = 0;
@@ -874,6 +876,8 @@ namespace BizUnitParse
             }
             else if (entryName.IndexOf(".package") > -1)
             {
+                memory = new MemoryStream(data);
+                stream = new BufferedStream(memory);
                 stream.Position = 0;
                 string name = MetaDataUtil.getBizOrPackAlias(new XmlTextReader(stream), MetaDataTypeEnum.package);
                 WritePrivateProfileString("metadata", name, entryName.Substring(0, entryName.LastIndexOf(".")), packagePath);
