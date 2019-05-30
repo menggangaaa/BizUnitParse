@@ -62,6 +62,7 @@ namespace EntityParse
                     }
                 }
             }
+            reader.Close();
             return alias;
         }
 
@@ -89,7 +90,7 @@ namespace EntityParse
                 //枚举 解析
                 enumParse(root);
             }
-
+            reader.Close();
         }
 
         //实体解析

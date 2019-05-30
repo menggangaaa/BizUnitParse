@@ -402,9 +402,11 @@ namespace BizUnitParse
                     if (File.Exists(path))
                     {
                         XmlDocument xml = new XmlDocument();
-                        xml.Load(new XmlTextReader(path));
+                        XmlTextReader reader = new XmlTextReader(path);
+                        xml.Load(reader);
                         XmlNode root = xml.LastChild;
                         MetaDataUtil.entityParse(root);
+                        reader.Close();
                     }
                     else if (!MetaDataUtil.entityMap.ContainsKey(supplier) || MetaDataUtil.entityMap[supplier] == null)
                     {
@@ -1088,9 +1090,11 @@ namespace BizUnitParse
                 if (File.Exists(path))
                 {
                     XmlDocument xml = new XmlDocument();
-                    xml.Load(new XmlTextReader(path));
+                    XmlTextReader reader = new XmlTextReader(path);
+                    xml.Load(reader);
                     XmlNode root = xml.LastChild;
                     MetaDataUtil.relationParse(root);
+                    reader.Close();
                 }
                 else
                 {
@@ -1118,9 +1122,11 @@ namespace BizUnitParse
                     if (File.Exists(path))
                     {
                         XmlDocument xml = new XmlDocument();
-                        xml.Load(new XmlTextReader(path));
+                        XmlTextReader reader = new XmlTextReader(path);
+                        xml.Load(reader);
                         XmlNode root = xml.LastChild;
                         MetaDataUtil.entityParse(root);
+                        reader.Close();
                     }
                     else
                     {
