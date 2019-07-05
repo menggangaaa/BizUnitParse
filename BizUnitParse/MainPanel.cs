@@ -69,7 +69,12 @@ namespace BizUnitParse
             txtEntityFilter.Focus();
             if (Screen.GetWorkingArea(this).Width < 1920)
             {
-                Font = new Font("宋体", 9F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(134)));
+                Font font = new Font("宋体", 12F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(134))); ;
+                Font = font;
+                bizUnitTree.Font = font;
+                entityTable.RowsDefaultCellStyle.Font = new Font("宋体", 8F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(134)));
+                entityTable.RowTemplate.DefaultCellStyle.Font = new Font("宋体", 8F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(134)));
+
             }
             #region 窗体缩放
             //GetAllInitInfo(Controls[0]);
