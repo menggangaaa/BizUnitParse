@@ -1008,6 +1008,7 @@ namespace BizUnitParse
                                 continue;
                             }
                             var zorValue = selectRow.Cells[0].Value;
+                            var oneValue = empToValue(selectRow.Cells[1].Value);
                             var twoValue = empToValue(selectRow.Cells[2].Value);
                             var thrValue = empToValue(selectRow.Cells[3].Value);
                             var forValue = empToValue(selectRow.Cells[4].Value);
@@ -1028,18 +1029,20 @@ namespace BizUnitParse
                                 entrySql.Append("left join ").Append(f7TableName).Append(" ");
                                 entrySql.Append(columnAlias).Append(" on ").Append(columnAlias).Append(".fid");
                                 entrySql.Append("=#1.").Append(key);
-                                entrySql.Append(Environment.NewLine);
+                                entrySql.Append(" --").Append(oneValue).Append(Environment.NewLine);
                             }
                             else if (twoValue.ToString() != "" && thrValue != "" && forValue != "")
                             {
                                 //当前表字段--枚举
                                 selectStr.Append("#1.").Append(twoValue.ToString()).Append(" ").Append(columnAlias).Append(",");
+                                selectStr.Append(" --").Append(oneValue);
                                 selectStr.Append(Environment.NewLine);
                             }
                             else if (twoValue.ToString() != "" && thrValue == "")
                             {
                                 //当前表字段
                                 selectStr.Append("#1.").Append(twoValue.ToString()).Append(" ").Append(columnAlias).Append(",");
+                                selectStr.Append(" --").Append(oneValue);
                                 selectStr.Append(Environment.NewLine);
                             }
 
@@ -1049,7 +1052,7 @@ namespace BizUnitParse
                                 entrySql.Append("left join ").Append(f7TableName).Append(" ");
                                 entrySql.Append(columnAlias).Append(" on ").Append(columnAlias).Append(".fparentid");
                                 entrySql.Append("=#1.fid");
-                                entrySql.Append(Environment.NewLine);
+                                entrySql.Append(" --").Append(oneValue).Append(Environment.NewLine);
                             }
                         }
                         selectStr.Append("#1.fid ID").Append(Environment.NewLine); ;
