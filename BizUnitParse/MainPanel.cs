@@ -153,6 +153,7 @@ namespace BizUnitParse
             initTxtEntityFilter();
 
             initSqlPanel();
+            initMegerPanel();
         }
 
         public TextBox txtSql = null;
@@ -177,6 +178,67 @@ namespace BizUnitParse
             //dropDown.Show(this, 880, 300);
 
             txtSql.KeyDown += TxtSql_KeyDown;
+        }
+
+        public Panel megerPanel = null;
+        public TextBox txtColumnMeger = null;
+        public TextBox txtBefor = null;
+        public TextBox txtAfter = null;
+        public Button btnMeger = null;
+        public ToolStripDropDown dropDown2 = null;
+        public void initMegerPanel()
+        {
+            //初始化 文本框
+            txtColumnMeger = new TextBox();
+            txtColumnMeger.Multiline = true;
+            txtColumnMeger.WordWrap = false;
+            txtColumnMeger.ScrollBars = ScrollBars.Both;
+            txtColumnMeger.Font = new Font("微软雅黑", 9f);
+            txtColumnMeger.BorderStyle = BorderStyle.None;
+            txtColumnMeger.Margin = new Padding(0);
+            txtColumnMeger.Location = new Point(0, 40);
+            txtColumnMeger.Size = new Size(385, 405);
+            txtColumnMeger.KeyDown += TxtColumnMeger_KeyDown;
+
+            txtBefor = new TextBox();
+            txtBefor.Font = new Font("微软雅黑", 12f);
+            txtBefor.Location = new Point(5, 5);
+            txtBefor.Size = new Size(140, 25);
+            txtBefor.Text = "DCUtil.setCellValue(addRow,\"";
+
+            txtAfter = new TextBox();
+            txtAfter.Font = new Font("微软雅黑", 12f);
+            txtAfter.Location = new Point(150, 5);
+            txtAfter.Size = new Size(140, 25);
+            txtAfter.Text = "\",null);//";
+
+            btnMeger = new Button();
+            btnMeger.Text = "合并";
+            btnMeger.AutoSize = true;
+            btnMeger.Font = new Font("微软雅黑", 12f);
+            btnMeger.Location = new Point(300, 5);
+            btnMeger.Size = new Size(80, 25);
+            btnMeger.MouseClick += BtnMeger_MouseClick;
+
+            //初始化面板
+            megerPanel = new Panel();
+            megerPanel.Font = new Font("微软雅黑", 9f);
+            megerPanel.BorderStyle = BorderStyle.None;
+            megerPanel.Margin = new Padding(0);
+
+            megerPanel.Controls.Add(txtColumnMeger);
+            megerPanel.Controls.Add(txtBefor);
+            megerPanel.Controls.Add(txtAfter);
+            megerPanel.Controls.Add(btnMeger);
+
+            ToolStripControlHost treeViewHost = new ToolStripControlHost(megerPanel);
+            treeViewHost.Margin = new Padding(0);
+            treeViewHost.AutoSize = false;
+            treeViewHost.Size = new Size(385, 445);
+            dropDown2 = new ToolStripDropDown();
+            dropDown2.Margin = new Padding(0);
+            dropDown2.Items.Add(treeViewHost);
+            //dropDown.Show(this, 880, 300);
         }
 
         //初始化实体过滤框
@@ -206,6 +268,19 @@ namespace BizUnitParse
             {
                 ((TextBox)sender).SelectAll();
             }
+        }
+
+        private void TxtColumnMeger_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.A)
+            {
+                ((TextBox)sender).SelectAll();
+            }
+        }
+
+        private void BtnMeger_MouseClick(object sender, MouseEventArgs e)
+        {
+            megerText();
         }
 
         private void txtDirPath_TextChanged(object sender, EventArgs e)
@@ -1016,11 +1091,12 @@ namespace BizUnitParse
                             {
                                 continue;
                             }
-                            string columnAlias = zorValue.ToString();
                             if (twoValue.ToString() == "" && thrValue == "")
                             {
                                 continue;
                             }
+                            string columnAlias = zorValue.ToString();
+
                             string f7TableName = thrValue.ToString();
                             if (twoValue.ToString() != "" && thrValue != "" && forValue == "")
                             {
@@ -1070,6 +1146,15 @@ namespace BizUnitParse
                     }
                     dropDown.Show(this, 880, 300);
                 }
+            }
+            else if (e.KeyChar.ToString().ToUpper() == "W")
+            {
+                if (dropDown2 == null)
+                {
+                    return;
+                }
+                megerText();
+                dropDown2.Show(this, 880, 300);
             }
             else if (e.KeyChar == 8)
             {
@@ -1232,6 +1317,51 @@ namespace BizUnitParse
                 ControlsChaneInit(Controls[0]);//表示pannel控件
                 ControlsChange(Controls[0]);
             }
+        }
+
+        public void megerText()
+        {
+            char[] a = Environment.NewLine.ToCharArray();
+
+            List<string> strs = new List<string>();
+            List<string> strs2 = new List<string>();
+
+            DataGridViewSelectedCellCollection selectCells = entityTable.SelectedCells;
+            HashSet<int> rowIndexs = new HashSet<int>();
+            foreach (DataGridViewCell selectCell in selectCells)
+            {
+                rowIndexs.Add(selectCell.RowIndex);
+            }
+            foreach (int index in rowIndexs)
+            {
+                DataGridViewRow selectRow = entityTable.Rows[index];
+                if (selectRow.Index == 0)
+                    continue;
+                var zorValue = selectRow.Cells[0].Value;
+                string oneValue = empToValue(selectRow.Cells[1].Value);
+                string twoValue = empToValue(selectRow.Cells[2].Value);
+                string thrValue = empToValue(selectRow.Cells[3].Value);
+                string forValue = empToValue(selectRow.Cells[4].Value);
+                if (zorValue == null || oneValue.Equals("") || twoValue.Equals(""))
+                    continue;
+                strs.Add(zorValue.ToString());
+                strs2.Add(oneValue);
+            }
+            int size = strs.Count > strs2.Count ? strs2.Count : strs.Count;
+            if (size == 0)
+                return;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < size; i++)
+            {
+                string str = strs[i];
+                string str2 = strs2[i];
+                sb.Append(txtBefor.Text);
+                sb.Append(str);
+                sb.Append(txtAfter.Text);
+                sb.Append(str2);
+                sb.Append(Environment.NewLine);
+            }
+            txtColumnMeger.Text = sb.ToString();
         }
     }
 }
