@@ -1070,7 +1070,7 @@ namespace BizUnitParse
                         //子分录 或F7 表连接
                         StringBuilder entrySql = new StringBuilder();
                         DataGridViewSelectedCellCollection selectCells = entityTable.SelectedCells;
-                        List<int> rowIndexs = new List<int>();
+                        SortedSet<int> rowIndexs = new SortedSet<int>();
                         foreach (DataGridViewCell selectCell in selectCells)
                         {
                             rowIndexs.Add(selectCell.RowIndex);
@@ -1327,7 +1327,7 @@ namespace BizUnitParse
             List<string> strs2 = new List<string>();
 
             DataGridViewSelectedCellCollection selectCells = entityTable.SelectedCells;
-            List<int> rowIndexs = new List<int>();
+            SortedSet<int> rowIndexs = new SortedSet<int>();
             foreach (DataGridViewCell selectCell in selectCells)
             {
                 rowIndexs.Add(selectCell.RowIndex);
